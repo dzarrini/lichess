@@ -20,6 +20,7 @@ void read_game_body(char* line, size_t len) {
   size_t j = 0;
   char move[15];
   bool ignore = true; // game round.
+  unsigned int game_round = 1;
   while (i < len && line[i] != '\n') {
     if (isspace(line[i])) {
       if (j == 0) { 
@@ -28,10 +29,13 @@ void read_game_body(char* line, size_t len) {
       }
       move[j] = '\0';
       if (!ignore) {
-        printf("%s\n", move);
+        // printf("%s\n", move);
       }
       // 1. white_move 1... black_move. Ignores 1. and 1...
       ignore = !ignore; 
+      if (ignore) {
+        game_round++;
+      }
       j = 0;
       i++;
       continue;
@@ -45,10 +49,11 @@ void read_game_body(char* line, size_t len) {
     j++;
     i++;
   }
+  game_round = game_round >> 1;
+  printf("%i\n", game_round);
 }
 
-void read_game() {
-  char *line = NULL;
+void read_game(char *line) {
   char key[50];
   char value[200];
   size_t len = 0;
@@ -74,10 +79,12 @@ void read_game() {
     read_game_body(line, len);
   }
 
-  free(line);
+  // free(line);
 }
 
 int main() {
-  printf("Daniel\n");
-  read_game();
+  char *line = NULL;
+  while(true) {
+    read_game(line);
+  }
 }
