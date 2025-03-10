@@ -1,8 +1,8 @@
 # Compiler to use
-CC = g++
+CC = gcc
 
 # Compiler flags
-CCFLAGS = -Wall -Wextra -pedantic -O3
+CCFLAGS = -Wall -Wextra -pedantic -O3 -g
 
 # Target executable name
 TARGET = lichess_binary
