@@ -5,7 +5,9 @@
 #include <cstring>
 
 const char event[] = "Event";
+const char variant[] = "Variant";
 const char event_of_interest[] = "Rated Blitz game";
+const unsigned int game_log_freq = 1000;
 
 void read_header(char* line, char* key, char* value) {
   int val = sscanf(line, "[ %s \"%[^\"]\" ]", key, value);
@@ -15,12 +17,12 @@ void read_header(char* line, char* key, char* value) {
   }
 }
 
-void read_game_body(char* line, size_t len) {
+unsigned long long int read_game_body(char* line, size_t len) {
   size_t i = 0;
   size_t j = 0;
   char move[15];
   bool ignore = true; // game round.
-  unsigned int game_round = 1;
+  unsigned long game_round = 1;
   while (i < len && line[i] != '\n') {
     if (isspace(line[i])) {
       if (j == 0) { 
@@ -50,10 +52,11 @@ void read_game_body(char* line, size_t len) {
     i++;
   }
   game_round = game_round >> 1;
-  printf("%i\n", game_round);
+  // printf("%i\n", game_round);
+  return game_round;
 }
 
-void read_game(char *line) {
+void read_game(char *line, unsigned long long* number_of_games, unsigned long long* total_moves) {
   char key[50];
   char value[200];
   size_t len = 0;
@@ -68,23 +71,32 @@ void read_game(char *line) {
     if (strcmp(key, event) == 0) {
       should_read_game = strcmp(value, event_of_interest) == 0;
     }
+    if (strcmp(key, variant) == 0) {
+      should_read_game = false;
+    }
   }
 
   if (nread == EOF) {
+    free(line);
     exit(EXIT_SUCCESS);
   }
 
   // Read Game.
   if (should_read_game) {
-    read_game_body(line, len);
+    (*number_of_games)++;
+    (*total_moves) += read_game_body(line, len);
+    if (*number_of_games % game_log_freq == 0) {
+      printf("%llu: %llu\n", *number_of_games, *total_moves);
+    }
   }
-
-  // free(line);
 }
 
 int main() {
   char *line = NULL;
+  unsigned long long int number_of_games = 0;
+  unsigned long long int total_moves = 0;
   while(true) {
-    read_game(line);
+    read_game(line, &number_of_games, &total_moves);
   }
+  printf("%llu: %llu\n", number_of_games, total_moves);
 }
