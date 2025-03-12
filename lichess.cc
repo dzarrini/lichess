@@ -56,15 +56,14 @@ unsigned long long int read_game_body(char* line, size_t len) {
   return game_round;
 }
 
-bool read_game(char **line, unsigned long long* number_of_games, unsigned long long* total_moves) {
+bool read_game(char **line, size_t* len, unsigned long long* number_of_games, unsigned long long* total_moves) {
   char key[50];
   char value[200];
-  size_t len = 0;
   int nread;
   bool should_read_game = false;
 
   // Read Headers.
-  while ((nread = getline(line, &len, stdin)) != -1) {
+  while ((nread = getline(line, len, stdin)) != -1) {
     if (len == 0 || *line[0] == '\n') continue;
     if (*line[0] != '[') break;
     read_header(*line, key, value);
@@ -78,27 +77,26 @@ bool read_game(char **line, unsigned long long* number_of_games, unsigned long l
 
   if (nread == EOF) {
     printf("%llu: %llu\n", *number_of_games, *total_moves);
-    free(*line);
     return false;
   }
 
   // Read Game.
   if (should_read_game) {
     (*number_of_games)++;
-    (*total_moves) += read_game_body(*line, len);
+    (*total_moves) += read_game_body(*line, *len);
     if (*number_of_games % game_log_freq == 0) {
-      printf("%llu: %llu -> %lu\n", *number_of_games, *total_moves, len);
+      printf("%llu: %llu\n", *number_of_games, *total_moves);
     }
   }
-  free(*line);
   return true;
 }
 
 int main() {
   char *line = NULL;
+  size_t len = 0;
   unsigned long long int number_of_games = 0;
   unsigned long long int total_moves = 0;
-  while(read_game(&line, &number_of_games, &total_moves));
+  while(read_game(&line, &len, &number_of_games, &total_moves));
   free(line);
   exit(EXIT_SUCCESS);
 }
