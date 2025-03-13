@@ -8,6 +8,9 @@ const char event[] = "Event";
 const char variant[] = "Variant";
 const char event_of_interest[] = "Rated Blitz game";
 const unsigned int game_log_freq = 1000;
+const char whiteElo[] = "WhiteElo";
+const char blackElo[] = "BlackElo";
+const int high_elo = 2000;
 
 void read_header(char* line, char* key, char* value) {
   int val = sscanf(line, "[ %s \"%[^\"]\" ]", key, value);
@@ -56,11 +59,21 @@ unsigned long long int read_game_body(char* line, size_t len) {
   return game_round;
 }
 
-bool read_game(char **line, size_t* len, unsigned long long* number_of_games, unsigned long long* total_moves) {
+bool read_game(
+    char **line,
+    size_t* len,
+    unsigned long long* number_of_games,
+    unsigned long long* total_moves, 
+    unsigned long long* high_number_of_games,
+    unsigned long long* high_total_moves) {
   char key[50];
   char value[200];
   int nread;
-  bool should_read_game = false;
+  bool skip_game = false;
+
+  bool is_white_high_rating = false;
+  bool is_black_high_rating = false;
+  unsigned long long moves;
 
   // Read Headers.
   while ((nread = getline(line, len, stdin)) != -1) {
@@ -68,25 +81,41 @@ bool read_game(char **line, size_t* len, unsigned long long* number_of_games, un
     if (*line[0] != '[') break;
     read_header(*line, key, value);
     if (strcmp(key, event) == 0) {
-      should_read_game = strcmp(value, event_of_interest) == 0;
+      skip_game = strcmp(value, event_of_interest) != 0;
     }
     if (strcmp(key, variant) == 0) {
-      should_read_game = false;
+      skip_game = true;
+    }
+    if (strcmp(key, whiteElo) == 0 && atoi(value) > high_elo) {
+      is_white_high_rating = true;
+    }
+    if (strcmp(key, whiteElo) == 0 && atoi(value) > high_elo) {
+      is_black_high_rating = true;
     }
   }
 
+  if (skip_game) {
+    return true;
+  }
+
   if (nread == EOF) {
+    printf("High ELO: %llu: %llu\n", *high_number_of_games, *high_total_moves);
     printf("%llu: %llu\n", *number_of_games, *total_moves);
     return false;
   }
 
+  moves = read_game_body(*line, nread);
+
+  if (is_white_high_rating && is_black_high_rating) {
+    (*high_number_of_games)++;
+    (*high_total_moves) += moves;
+  }
+
   // Read Game.
-  if (should_read_game) {
-    (*number_of_games)++;
-    (*total_moves) += read_game_body(*line, *len);
-    if (*number_of_games % game_log_freq == 0) {
-      printf("%llu: %llu\n", *number_of_games, *total_moves);
-    }
+  (*number_of_games)++;
+  (*total_moves) += moves;
+  if (*number_of_games % game_log_freq == 0) {
+    printf("%llu: %llu\n", *number_of_games, *total_moves);
   }
   return true;
 }
@@ -96,7 +125,9 @@ int main() {
   size_t len = 0;
   unsigned long long int number_of_games = 0;
   unsigned long long int total_moves = 0;
-  while(read_game(&line, &len, &number_of_games, &total_moves));
+  unsigned long long int high_number_of_games = 0;
+  unsigned long long int high_total_moves = 0;
+  while(read_game(&line, &len, &number_of_games, &total_moves, &high_number_of_games, &high_total_moves));
   free(line);
   exit(EXIT_SUCCESS);
 }
