@@ -18,6 +18,20 @@ const char castle_queen[] = "O-O-O";
 
 const size_t max_moves = 15;
 
+struct ChessDataState {
+  // Counts number of games and number of moves.
+  unsigned long long int number_of_games = 0;
+  unsigned long long int total_moves = 0;
+  unsigned long long int high_number_of_games = 0;
+  unsigned long long int high_total_moves = 0;
+
+  // Counts the squares where checks happened.
+  unsigned long long total_white_board[64];
+  unsigned long long total_black_board[64];
+  unsigned long long high_white_board[64];
+  unsigned long long high_black_board[64];
+};
+
 void read_header(char* line, char* key, char* value) {
   int val = sscanf(line, "[ %s \"%[^\"]\" ]", key, value);
   if (val == 1) {
@@ -155,14 +169,7 @@ void add_board(unsigned long long* total,
 bool read_game(
     char **line,
     size_t* len,
-    unsigned long long* number_of_games,
-    unsigned long long* total_moves, 
-    unsigned long long* high_number_of_games,
-    unsigned long long* high_total_moves,
-    unsigned long long* total_white_board,
-    unsigned long long* total_black_board,
-    unsigned long long* high_white_board,
-    unsigned long long* high_black_board) {
+    struct ChessDataState* chess_data_state) {
 
   char key[50];
   char value[200];
@@ -200,28 +207,26 @@ bool read_game(
   }
 
   if (nread == EOF) {
-    printf("High ELO: %llu: %llu\n", *high_number_of_games, *high_total_moves);
-    printf("%llu: %llu\n", *number_of_games, *total_moves);
     return false;
   }
 
   moves = read_game_body(*line, nread, game_white_board, game_black_board);
 
   if (is_white_high_rating && is_black_high_rating) {
-    (*high_number_of_games)++;
-    (*high_total_moves) += moves;
-    add_board(high_white_board, game_white_board);
-    add_board(high_black_board, game_black_board);
+    chess_data_state->high_number_of_games++;
+    chess_data_state->high_total_moves += moves;
+    add_board(chess_data_state->high_white_board, game_white_board);
+    add_board(chess_data_state->high_black_board, game_black_board);
   }
 
-  add_board(total_white_board, game_white_board);
-  add_board(total_black_board, game_black_board);
+  add_board(chess_data_state->total_white_board, game_white_board);
+  add_board(chess_data_state->total_black_board, game_black_board);
 
   // Read Game.
-  (*number_of_games)++;
-  (*total_moves) += moves;
-  if (*number_of_games % game_log_freq == 0) {
-    printf("%llu: %llu\n", *number_of_games, *total_moves);
+  chess_data_state->number_of_games++;
+  chess_data_state->total_moves += moves;
+  if (chess_data_state->number_of_games % game_log_freq == 0) {
+    printf("Processed: %llu\n", chess_data_state->number_of_games);
   }
   return true;
 }
@@ -232,47 +237,48 @@ void print_board(unsigned long long* board) {
 
   for(;i>=0; i--) {
     j = 0;
-    for(;j<8; j++) {
+    for(;j<7; j++) {
       printf("%llu, ", board[i*8 + j]);
+    }
+    if(j ==7) {
+      printf("%llu", board[i*8 + j]);
     }
     printf("\n");
   }
 }
 
+void print_data(struct ChessDataState* chess_data_state) {
+  printf("Number of moves: %llu\n", chess_data_state->number_of_games);
+  printf("Total moves: %llu\n", chess_data_state->total_moves);
+  printf("High Black Board\n");
+  print_board(chess_data_state->high_black_board);
+  printf("High White Board\n");
+  print_board(chess_data_state->high_white_board);
+  printf("Black Board\n");
+  print_board(chess_data_state->total_black_board);
+  printf("White Board\n");
+  print_board(chess_data_state->total_white_board);
+}
+
 int main() {
   char *line = NULL;
   size_t len = 0;
-  // Counts number of games and number of moves.
-  unsigned long long int number_of_games = 0;
-  unsigned long long int total_moves = 0;
-  unsigned long long int high_number_of_games = 0;
-  unsigned long long int high_total_moves = 0;
 
-  // Counts the squares where checks happened.
-  unsigned long long total_white_board[64] = {0};
-  unsigned long long total_black_board[64] = {0};
-  unsigned long long high_white_board[64] = {0};
-  unsigned long long high_black_board[64] = {0};
+  struct ChessDataState chess_data_state;
+  // initalize.
+  chess_data_state.number_of_games = 0;
+  chess_data_state.total_moves = 0;
+  chess_data_state.high_number_of_games = 0;
+  chess_data_state.high_total_moves = 0;
+  memset(chess_data_state.total_white_board, 0, sizeof(unsigned long long) * 64);
+  memset(chess_data_state.total_black_board, 0, sizeof(unsigned long long) * 64);
+  memset(chess_data_state.high_white_board, 0, sizeof(unsigned long long) * 64);
+  memset(chess_data_state.high_black_board, 0, sizeof(unsigned long long) * 64);
   while(
       read_game(&line,
                 &len,
-                &number_of_games,
-                &total_moves,
-                &high_number_of_games,
-                &high_total_moves,
-                total_white_board,
-                total_black_board,
-                high_white_board,
-                high_black_board));
-  // print_board(white_board);
-  printf("High Black Board\n");
-  print_board(high_black_board);
-  printf("High White Board\n");
-  print_board(high_white_board);
-  printf("Black Board\n");
-  print_board(total_black_board);
-  printf("White Board\n");
-  print_board(total_white_board);
+                &chess_data_state));
   free(line);
+  print_data(&chess_data_state);
   exit(EXIT_SUCCESS);
 }
