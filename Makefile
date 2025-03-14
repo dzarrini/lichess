@@ -30,7 +30,7 @@ clean:
 
 # Run the executable
 run: $(TARGET)
-	cat sample.txt | ./$(TARGET)
+	time cat sample.txt | ./$(TARGET)
 
 # Phony targets
 .PHONY: all clean run
