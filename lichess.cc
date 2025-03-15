@@ -15,15 +15,27 @@ const int high_elo = 2000;
 const char castle_king[] = "O-O";
 const char castle_queen[] = "O-O-O";
 
+const char white_win_str[] = "1-0";
+const char black_win_str[] = "0-1";
+const char draw_str[] = "1/2-1/2";
+
 
 const size_t max_moves = 15;
 
 struct ChessDataState {
+  // Game Results.
+  unsigned long long white_win = 0;
+  unsigned long long black_win = 0;
+  unsigned long long draw = 0;
+  unsigned long long high_white_win = 0;
+  unsigned long long high_black_win = 0;
+  unsigned long long high_draw = 0;
+
   // Counts number of games and number of moves.
-  unsigned long long int number_of_games = 0;
-  unsigned long long int total_moves = 0;
-  unsigned long long int high_number_of_games = 0;
-  unsigned long long int high_total_moves = 0;
+  unsigned long long number_of_games = 0;
+  unsigned long long total_moves = 0;
+  unsigned long long high_number_of_games = 0;
+  unsigned long long high_total_moves = 0;
 
   // Counts the squares where checks happened.
   unsigned long long total_white_board[64];
@@ -84,6 +96,9 @@ void maybe_update_king_pos(
 unsigned long long int read_game_body(
     char* line,
     size_t len,
+    unsigned long long* white_win,
+    unsigned long long* black_win,
+    unsigned long long* draw,
     unsigned long long* white_board,
     unsigned long long* black_board) {
   size_t i = 0;
@@ -106,12 +121,11 @@ unsigned long long int read_game_body(
       move[j] = '\0';
       if (!ignore) {
         // Process the Game.
+        // printf("%s\n", move);
         if (is_in_check) {
           if (is_white_move) {
-            // printf("white king %s: %li\n", move, white_king);
             white_board[white_king]++;    
           } else {
-            // printf("black king %s: %li\n", move, black_king);
             black_board[black_king]++;    
           }
         }
@@ -121,9 +135,6 @@ unsigned long long int read_game_body(
           maybe_update_king_pos(move, &black_king, is_white_move);
         }
         is_in_check = is_check(move);
-        // printf("white king %s: %li\n", move, white_king);
-        // printf("black king %s: %li\n", move, black_king);
-
         is_white_move = !is_white_move;
       }
       // 1. white_move 1... black_move. Ignores 1. and 1...
@@ -143,6 +154,14 @@ unsigned long long int read_game_body(
     move[j] = line[i];
     j++;
     i++;
+  }
+
+  if (strcmp(move, white_win_str) == 0) {
+    (*white_win)++;
+  } else if (strcmp(move, black_win_str) == 0) {
+    (*black_win)++;
+  } else {
+    (*draw)++;
   }
 
   // When the game is finished and user is in check.
@@ -183,6 +202,10 @@ bool read_game(
   bool is_black_high_rating = false;
   unsigned long long moves;
 
+  unsigned long long white_win = 0;
+  unsigned long long black_win = 0;
+  unsigned long long draw = 0;
+
   // Read Headers.
   while ((nread = getline(line, len, stdin)) != -1) {
     if (len == 0 || *line[0] == '\n') continue;
@@ -210,19 +233,30 @@ bool read_game(
     return false;
   }
 
-  moves = read_game_body(*line, nread, game_white_board, game_black_board);
+  moves = read_game_body(
+      *line,
+      nread,
+      &white_win,
+      &black_win,
+      &draw,
+      game_white_board,
+      game_black_board);
 
   if (is_white_high_rating && is_black_high_rating) {
     chess_data_state->high_number_of_games++;
     chess_data_state->high_total_moves += moves;
     add_board(chess_data_state->high_white_board, game_white_board);
     add_board(chess_data_state->high_black_board, game_black_board);
+    chess_data_state->high_white_win += white_win;
+    chess_data_state->high_black_win += black_win;
+    chess_data_state->high_draw      += draw;
   }
 
   add_board(chess_data_state->total_white_board, game_white_board);
   add_board(chess_data_state->total_black_board, game_black_board);
-
-  // Read Game.
+  chess_data_state->white_win += white_win;
+  chess_data_state->black_win += black_win;
+  chess_data_state->draw      += draw;
   chess_data_state->number_of_games++;
   chess_data_state->total_moves += moves;
   if (chess_data_state->number_of_games % game_log_freq == 0) {
@@ -258,6 +292,12 @@ void print_data(struct ChessDataState* chess_data_state) {
   print_board(chess_data_state->total_black_board);
   printf("White Board\n");
   print_board(chess_data_state->total_white_board);
+  printf("White Win: %llu\n", chess_data_state->white_win);
+  printf("Black Win: %llu\n", chess_data_state->black_win);
+  printf("Draw Win: %llu\n", chess_data_state->draw);
+  printf("High White Win: %llu\n", chess_data_state->high_white_win);
+  printf("High Black Win: %llu\n", chess_data_state->high_black_win);
+  printf("High Draw Win: %llu\n", chess_data_state->high_draw);
 }
 
 int main() {
