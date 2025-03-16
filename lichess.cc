@@ -44,22 +44,22 @@ struct ChessDataState {
   unsigned long long high_total_moves = 0;
 
   // Counts the squares where checks happened.
-  unsigned long long total_white_board[64];
-  unsigned long long total_black_board[64];
-  unsigned long long high_white_board[64];
-  unsigned long long high_black_board[64];
+  unsigned long long total_white_board[64] = {0};
+  unsigned long long total_black_board[64] = {0};
+  unsigned long long high_white_board[64] = {0};
+  unsigned long long high_black_board[64] = {0};
 
   // Deadliest square.
-  unsigned long long total_white_capture[64];
-  unsigned long long total_black_capture[64];
-  unsigned long long high_white_capture[64];
-  unsigned long long high_black_capture[64];
+  unsigned long long total_white_capture[64] = {0};
+  unsigned long long total_black_capture[64] = {0};
+  unsigned long long high_white_capture[64] = {0};
+  unsigned long long high_black_capture[64] = {0};
 
   // Promotions.
-  unsigned long long white_promotion[8];
-  unsigned long long black_promotion[8];
-  unsigned long long high_white_promotion[8];
-  unsigned long long high_black_promotion[8];
+  unsigned long long white_promotion[8] = {0};
+  unsigned long long black_promotion[8] = {0};
+  unsigned long long high_white_promotion[8] = {0};
+  unsigned long long high_black_promotion[8] = {0};
 };
 
 void read_header(char* line, char* key, char* value) {
@@ -363,8 +363,8 @@ bool read_game(
     chess_data_state->high_white_win += white_win;
     chess_data_state->high_black_win += black_win;
     chess_data_state->high_draw      += draw;
-    chess_data_state->white_checkmate      += white_checkmate;
-    chess_data_state->black_checkmate      += black_checkmate;
+    chess_data_state->high_white_checkmate      += white_checkmate;
+    chess_data_state->high_black_checkmate      += black_checkmate;
     add_board(chess_data_state->high_white_capture, game_white_capture);
     add_board(chess_data_state->high_black_capture, game_black_board);
     add_promo(chess_data_state->high_white_promotion, white_promotion);
@@ -412,12 +412,13 @@ void print_promotion(unsigned long long* promotion) {
   for(;i<7; i++) {
     printf("%llu, ", promotion[i]);
   }
-  printf("%llu\n", promotion[8]);
+  printf("%llu\n", promotion[7]);
 }
 
 void print_data(struct ChessDataState* chess_data_state) {
   printf("Number of games: %llu\n", chess_data_state->number_of_games);
   printf("Total moves: %llu\n", chess_data_state->total_moves);
+  printf("Black Board\n");
   print_board(chess_data_state->total_black_board);
   printf("White Board\n");
   print_board(chess_data_state->total_white_board);
@@ -441,7 +442,6 @@ void print_data(struct ChessDataState* chess_data_state) {
   print_board(chess_data_state->high_black_board);
   printf("High White Board\n");
   print_board(chess_data_state->high_white_board);
-  printf("Black Board\n");
   printf("High White Win: %llu\n", chess_data_state->high_white_win);
   printf("High Black Win: %llu\n", chess_data_state->high_black_win);
   printf("High Draw Win: %llu\n", chess_data_state->high_draw);
