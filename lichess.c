@@ -2,13 +2,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h> 
-#include <cstring>
+#include <stdbool.h>
+#include <string.h>
 
 const char event[] = "Event";
 const char variant[] = "Variant";
 const char event_of_interest[] = "Rated Blitz game";
 const unsigned int game_log_freq = 1000000;
-const int max_limit = -1;
+const unsigned long long max_limit = -1;
 const char whiteElo[] = "WhiteElo";
 const char blackElo[] = "BlackElo";
 const int high_elo = 2000;
@@ -24,42 +25,42 @@ const size_t max_moves = 15;
 
 struct ChessDataState {
   // Game Results.
-  unsigned long long white_win = 0;
-  unsigned long long black_win = 0;
-  unsigned long long draw = 0;
-  unsigned long long high_white_win = 0;
-  unsigned long long high_black_win = 0;
-  unsigned long long high_draw = 0;
+  unsigned long long white_win;
+  unsigned long long black_win;
+  unsigned long long draw;
+  unsigned long long high_white_win;
+  unsigned long long high_black_win;
+  unsigned long long high_draw;
 
   // Checkmates.
-  unsigned long long white_checkmate = 0;
-  unsigned long long black_checkmate = 0;
-  unsigned long long high_white_checkmate = 0;
-  unsigned long long high_black_checkmate = 0;
+  unsigned long long white_checkmate;
+  unsigned long long black_checkmate;
+  unsigned long long high_white_checkmate;
+  unsigned long long high_black_checkmate;
 
   // Counts number of games and number of moves.
-  unsigned long long number_of_games = 0;
-  unsigned long long total_moves = 0;
-  unsigned long long high_number_of_games = 0;
-  unsigned long long high_total_moves = 0;
+  unsigned long long number_of_games;
+  unsigned long long total_moves;
+  unsigned long long high_number_of_games;
+  unsigned long long high_total_moves;
 
   // Counts the squares where checks happened.
-  unsigned long long total_white_board[64] = {0};
-  unsigned long long total_black_board[64] = {0};
-  unsigned long long high_white_board[64] = {0};
-  unsigned long long high_black_board[64] = {0};
+  unsigned long long total_white_board[64];
+  unsigned long long total_black_board[64];
+  unsigned long long high_white_board[64];
+  unsigned long long high_black_board[64];
 
   // Deadliest square.
-  unsigned long long total_white_capture[64] = {0};
-  unsigned long long total_black_capture[64] = {0};
-  unsigned long long high_white_capture[64] = {0};
-  unsigned long long high_black_capture[64] = {0};
+  unsigned long long total_white_capture[64];
+  unsigned long long total_black_capture[64];
+  unsigned long long high_white_capture[64];
+  unsigned long long high_black_capture[64];
 
   // Promotions.
-  unsigned long long white_promotion[8] = {0};
-  unsigned long long black_promotion[8] = {0};
-  unsigned long long high_white_promotion[8] = {0};
-  unsigned long long high_black_promotion[8] = {0};
+  unsigned long long white_promotion[8];
+  unsigned long long black_promotion[8];
+  unsigned long long high_white_promotion[8];
+  unsigned long long high_black_promotion[8];
 };
 
 void read_header(char* line, char* key, char* value) {
@@ -463,6 +464,21 @@ int main() {
 
   struct ChessDataState chess_data_state;
   // initalize.
+  chess_data_state.white_win = 0;
+  chess_data_state.black_win = 0;
+  chess_data_state.draw = 0;
+  chess_data_state.high_white_win = 0;
+  chess_data_state.high_black_win = 0;
+  chess_data_state.high_draw = 0;
+  chess_data_state.white_checkmate = 0;
+  chess_data_state.black_checkmate = 0;
+  chess_data_state.high_white_checkmate = 0;
+  chess_data_state.high_black_checkmate = 0;
+  chess_data_state.number_of_games = 0;
+  chess_data_state.total_moves = 0;
+  chess_data_state.high_number_of_games = 0;
+  chess_data_state.high_total_moves = 0;
+
   memset(chess_data_state.total_white_board, 0, sizeof(unsigned long long) * 64);
   memset(chess_data_state.total_black_board, 0, sizeof(unsigned long long) * 64);
   memset(chess_data_state.total_white_capture, 0, sizeof(unsigned long long) * 64);

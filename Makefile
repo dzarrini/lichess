@@ -8,7 +8,7 @@ CCFLAGS = -Wall -Wextra -pedantic -O3 -g
 TARGET = lichess_binary
 
 # Source files
-SRC = lichess.cc
+SRC = lichess.c
 
 # Object files
 OBJ = $(SRC:.cpp=.o)
@@ -21,7 +21,7 @@ $(TARGET): $(OBJ)
 	$(CC) $(CCFLAGS) -o $(TARGET) $(OBJ)
 
 # Rule to compile the source files into object files
-%.o: %.cc
+%.o: %.c
 	$(CC) $(CCFLAGS) -c $< -o $@
 
 # Clean up build files
